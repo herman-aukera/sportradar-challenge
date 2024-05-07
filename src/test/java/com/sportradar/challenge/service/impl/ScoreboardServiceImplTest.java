@@ -16,7 +16,7 @@ public class ScoreboardServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        scoreboard = null;
+        scoreboard = new ScoreboardServiceImpl();
     }
 
     @Test
@@ -43,6 +43,7 @@ public class ScoreboardServiceImplTest {
     void updateScoreTest() {
 
         scoreboard.startNewMatch("Home Team", "Away Team");
+
         scoreboard.updateScore("Home Team", "Away Team", 1, 2);
 
         Match match = scoreboard.getMatch("Home Team", "Away Team");
@@ -50,6 +51,8 @@ public class ScoreboardServiceImplTest {
         assertEquals(2, match.awayScore());
 
         scoreboard.updateScore(match, 2, 3);
+
+        match = scoreboard.getMatch("Home Team", "Away Team");
         assertEquals(2, match.homeScore());
         assertEquals(3, match.awayScore());
     }
