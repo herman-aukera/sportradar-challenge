@@ -3,11 +3,13 @@ package com.sportradar.challenge.service.impl;
 import com.sportradar.challenge.service.ScoreboardService;
 import com.sportradar.challenge.model.Match;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
+@Service("scoreboardService")
 public class ScoreboardServiceImpl implements ScoreboardService {
 
     private final Map<String, Match> matchesInProgress;
