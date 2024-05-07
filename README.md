@@ -62,6 +62,17 @@ Summary:
 4. Argentina 3 - Australia 1
 5. Germany 2 - France 2
 ```
+Please refer to the `ScoreboardServiceImpl` class and the unit tests (`ScoreboardServiceImplTest`) for more details on the available methods and their usage.
+
+## Dependencies
+
+This solution has the following dependencies:
+
+- Lombok: Used for generating boilerplate code (e.g., constructors, getters, setters).
+- Log4j2: Used for logging purposes.
+- JUnit 5: Used for writing and running unit tests.
+
+Make sure to include these dependencies in your project to ensure the proper functioning of the library.
 
 
 ## Edge Cases
