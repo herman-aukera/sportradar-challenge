@@ -73,9 +73,21 @@ public class ScoreboardServiceImpl implements ScoreboardService {
     @Override
     public List<Match> getSummary() {
         log.debug("Getting match summary");
-        return matchesInProgress.values().stream()
+        List<Match> summary = matchesInProgress.values().stream()
                 .sorted(Comparator.comparingInt(this::getTotalScore).thenComparing(Match::startTime).reversed())
                 .toList();
+
+        printSummary(summary);
+
+        return summary;
+    }
+
+    private static void printSummary(List<Match> summary) {
+        log.info("Summary:");
+        for (int i = 0; i < summary.size(); i++) {
+            Match match = summary.get(i);
+            log.info((i + 1) + ". " + match.homeTeam() + " " + match.homeScore() + " - " + match.awayTeam() + " " + match.awayScore());
+        }
     }
 
     @Override
@@ -107,4 +119,5 @@ public class ScoreboardServiceImpl implements ScoreboardService {
     private int getTotalScore(Match match) {
         return match.homeScore() + match.awayScore();
     }
+
 }
