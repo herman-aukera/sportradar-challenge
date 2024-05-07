@@ -2,52 +2,67 @@ package com.sportradar.challenge.service.impl;
 
 import com.sportradar.challenge.service.ScoreboardService;
 import com.sportradar.challenge.model.Match;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
+@Slf4j
 public class ScoreboardServiceImpl implements ScoreboardService {
 
-    private final Map<String, Match> ongoingMatches;
+    private final Map<String, Match> matchesInProgress;
     private final List<Match> finishedMatches;
 
     public ScoreboardServiceImpl() {
-        ongoingMatches = new HashMap<>();
+        matchesInProgress = new HashMap<>();
         finishedMatches = new ArrayList<>();
+        log.info("Scoreboard service initialized");
     }
 
     @Override
     public void startNewMatch(String homeTeam, String awayTeam) {
         String matchKey = getMatchKey(homeTeam, awayTeam);
-        if (!ongoingMatches.containsKey(matchKey)) {
-            Match newMatch = new Match(homeTeam, 0, awayTeam, 0, LocalDateTime.now(), null);
-            ongoingMatches.put(matchKey, newMatch);
-        }
+
+        log.debug("Starting new match: {}", matchKey);
+
+        if (!matchesInProgress.containsKey(matchKey))
+            matchesInProgress.put(matchKey, new Match(homeTeam, 0, awayTeam, 0, LocalDateTime.now(), null));
+        else
+            log.warn("Match already in progress: {}", matchKey);
+
     }
 
     @Override
     public void updateScore(String homeTeam, String awayTeam, int homeScore, int awayScore) {
         String matchKey = getMatchKey(homeTeam, awayTeam);
-        Match match = ongoingMatches.get(matchKey);
-        if (match != null) {
-            ongoingMatches.put(matchKey, new Match(homeTeam, homeScore, awayTeam, awayScore, match.startTime(), match.endTime()));
-        }
+        Match match = matchesInProgress.get(matchKey);
+
+        log.debug("Updating score for match: {}", matchKey);
+
+        if (match != null)
+            matchesInProgress.put(matchKey, new Match(homeTeam, homeScore, awayTeam, awayScore, match.startTime(), null));
+        else
+            log.warn("No ongoing match found for Updating: {}", matchKey);
+
     }
 
     @Override
     public void updateScore(Match match, int homeScore, int awayScore) {
-        String matchKey = getMatchKey(match.homeTeam(), match.awayTeam());
-        ongoingMatches.put(matchKey, new Match(match.homeTeam(), homeScore, match.awayTeam(), awayScore, match.startTime(), match.endTime()));
+        updateScore(match.homeTeam(), match.awayTeam(), homeScore, awayScore);
     }
 
     @Override
     public void finishMatch(String homeTeam, String awayTeam) {
         String matchKey = getMatchKey(homeTeam, awayTeam);
-        Match match = ongoingMatches.remove(matchKey);
-        if (match != null) {
+        Match match = matchesInProgress.remove(matchKey);
+
+        log.debug("Finishing match: {}", matchKey);
+
+        if (match != null)
             finishedMatches.add(new Match(match.homeTeam(), match.homeScore(), match.awayTeam(), match.awayScore(), match.startTime(), LocalDateTime.now()));
-        }
+        else
+            log.warn("No ongoing match found for Finishing: {}", matchKey);
+
     }
 
     @Override
@@ -57,26 +72,23 @@ public class ScoreboardServiceImpl implements ScoreboardService {
 
     @Override
     public List<Match> getSummary() {
-        return ongoingMatches.values().stream()
-                .sorted((m1, m2) -> {
-                    int totalScoreDiff = getTotalScore(m2) - getTotalScore(m1);
-                    if (totalScoreDiff != 0) {
-                        return -totalScoreDiff; // Descending order by total score
-                    } else {
-                        return m2.startTime().compareTo(m1.startTime()); // Ascending order by start time
-                    }
-                })
-                .collect(Collectors.toList());
+        log.debug("Getting match summary");
+        return matchesInProgress.values().stream()
+                .sorted(Comparator.comparingInt(this::getTotalScore).thenComparing(Match::startTime).reversed())
+                .toList();
     }
 
     @Override
     public Match getMatch(String homeTeam, String awayTeam) {
-        return ongoingMatches.get(getMatchKey(homeTeam, awayTeam));
+        return matchesInProgress.get(getMatchKey(homeTeam, awayTeam));
     }
 
     @Override
     public Match getFinishedMatch(String homeTeam, String awayTeam) {
         String matchKey = getMatchKey(homeTeam, awayTeam);
+
+        log.debug("Getting finished match: {}", matchKey);
+
         return finishedMatches.stream()
                 .filter(m -> getMatchKey(m.homeTeam(), m.awayTeam()).equals(matchKey))
                 .findFirst()
@@ -85,7 +97,7 @@ public class ScoreboardServiceImpl implements ScoreboardService {
 
     @Override
     public boolean containsMatch(String homeTeam, String awayTeam) {
-        return ongoingMatches.containsKey(getMatchKey(homeTeam, awayTeam));
+        return matchesInProgress.containsKey(getMatchKey(homeTeam, awayTeam));
     }
 
     private String getMatchKey(String homeTeam, String awayTeam) {
